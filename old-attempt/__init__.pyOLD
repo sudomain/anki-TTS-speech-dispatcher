@@ -59,13 +59,6 @@ class SpeechDPlayer(TTSProcessPlayer):
         #maybe needs to be in _on_done?
         #client.close()
         
-    # this is called on the main thread, after _play finishes
-    def _on_done(self, ret: Future, cb: OnDoneCallback) -> None:
-        # close connection to the speech-dispatcher daemon
-        #client = speechd.SSIPClient('Anki')
-        #client.close()
-        pass
-
     # we don't support stopping while the file is being downloaded
     # (but the user can interrupt playing after it has been downloaded)
     def stop(self):
