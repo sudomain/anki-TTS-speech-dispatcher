@@ -2,8 +2,6 @@
 # License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
 """
-subprocess spd-say version
-
 Doc:
 Requires speech-dispatcher and its Python bindings to be installed (the python3-speechd package on Debian 11.6 at time of this writing).
 
@@ -26,23 +24,24 @@ from anki.lang import compatMap
 from anki.sound import AVTag, TTSTag
 from aqt import mw
 from aqt.sound import OnDoneCallback, av_player
-#from aqt.tts import TTSProcessPlayer, TTSVoice
+from aqt.tts import TTSProcessPlayer, TTSVoice
 
-import subprocess
-import aqt.tts
+sys.path.append(os.path.join(os.path.dirname(__file__), "vendor"))
+
+import speechd
 
 # we subclass the default voice object to store the speechd language code
 @dataclass
-class SpeechDVoice(aqt.tts.TTSVoice):
+class SpeechDVoice(TTSVoice):
     speechd_lang: str
 
-#class SpeechDPlayer(TTSProcessPlayer):
-class SpeechDPlayer(aqt.tts.TTSProcessPlayer):
+class SpeechDPlayer(TTSProcessPlayer):
+
     # this is called the first time Anki tries to play a TTS file
-    def get_available_voices(self) -> List[aqt.tts.TTSVoice]:
+    def get_available_voices(self) -> List[TTSVoice]:
         voices = []
         # add the voice using the name "speechd"
-        voices.append(SpeechDVoice(name="speechd", lang="en_US", speechd_lang="en-us"))
+        voices.append(SpeechDVoice(name="speechd", lang="en_US", speechd_lang="en"))
         return voices  # type: ignore
 
     # this is called on a background thread, and will not block the UI
@@ -55,27 +54,17 @@ class SpeechDPlayer(aqt.tts.TTSProcessPlayer):
         if not tag.field_text.strip():
             return
 
-        #subprocess.run(["spd-say", tag.field_text])
-        self._process = subprocess.Popen(
-            ["spd-say", "-w", "-e", "-"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
-        # write the input text to stdin
-        self._process.stdin.write(tag.field_text.encode("utf8"))
-        self._process.stdin.close()
-        self._wait_for_termination(tag)
-
-        return
-
+        client = speechd.SSIPClient('Anki')
+        client.speak(tag.field_text)
+        #maybe needs to be in _on_done?
+        #client.close()
+        
     # this is called on the main thread, after _play finishes
-    #def _on_done(self, ret: Future, cb: OnDoneCallback) -> None:
+    def _on_done(self, ret: Future, cb: OnDoneCallback) -> None:
         # close connection to the speech-dispatcher daemon
         #client = speechd.SSIPClient('Anki')
         #client.close()
-        #pass
+        pass
 
     # we don't support stopping while the file is being downloaded
     # (but the user can interrupt playing after it has been downloaded)
