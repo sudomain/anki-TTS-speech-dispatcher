@@ -1,15 +1,16 @@
 # License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
 """
+TODO add application name
+TODO list voices with spd-say -L and parsing the output
+subprocess spd-say version
+TODO document multiple voices in README
+TODO test stopping with an output modile known to support it such as espeak.
+
 Speech Dispatcher is configured using separate config files. It allows for many customizations including different speech settings for different applications (Firefox, Emacs, and now Anki). It works with many TTS engines. If an engine is not already supported, the process of making a new one is relatively simple using the "generic output module". See the Configuration section of the speech-dispatcher Texinfo document for file locations and examples.
 
 Heavily based on MacTTSPlayer(TTSProcessPlayer): https://github.com/ankitects/anki/blob/f9126927b1c537f76b2e11f2f8a6003d2313245b/qt/aqt/tts.py#L170
 """
-
-#TODO list voices with spd-say -L and parsing the output
-#TODO remove hardcoded language "en_US" 
-#TODO test stopping with an output module known to support it such as espeak.
-#TODO support per field TTS speed e.g. {{tts fr_FR speed=0.8:SomeField}}
 
 import os
 import sys
@@ -34,11 +35,10 @@ class SpeechDVoice(aqt.tts.TTSVoice):
 #class SpeechDPlayer(TTSProcessPlayer):
 class SpeechDPlayer(aqt.tts.TTSProcessPlayer):
     # this is called the first time Anki tries to play a TTS file
-    #TODO spd -L gives a list of voices, but I dont think it's in a format that can be used
     def get_available_voices(self) -> List[aqt.tts.TTSVoice]:
         voices = []
         # add the voice using the name "speechd"
-        voices.append(SpeechDVoice(name="speechd", lang="en_US", speechd_lang="en"))
+        voices.append(SpeechDVoice(name="speechd", lang="en_US", speechd_lang="en-us"))
         return voices  # type: ignore
 
     # this is called on a background thread, and will not block the UI
@@ -51,7 +51,7 @@ class SpeechDPlayer(aqt.tts.TTSProcessPlayer):
         if not tag.field_text.strip():
             return
 
-        subprocess.run(["spd-say", "--wait", "--application-name", "Anki", tag.field_text])
+        subprocess.run(["spd-say", "--application-name", "Anki", tag.field_text])
         #TODO pipe mode can be sent commands if the line starts with !-!, for instance !-!SET SELF VOICE FEMALE1. Use Python to prepend a space to deactivate commands
         """
         self._process = subprocess.Popen(
