@@ -1,7 +1,7 @@
 # Anki TTS Speech Dispatcher
-Adding speech-dispatcher support to Anki through an add-on. It uses `spd-say` to speak text, so if that works then this add-om should work.
+Adding speech-dispatcher support to Anki through an add-on. It uses `spd-say` to speak text, so if that works then this add-on should work.
 
-This add-on is new and hasn't been extensively test. It assumes you have a properly configured speech-dispatcher and that `spd-say` works (this add-on uses the defailt voice). Some limitations which I hope to fix:
+This add-on is new and hasn't been extensively test. It assumes you have a properly configured speech-dispatcher and that `spd-say` works (this add-on uses the default voice). Some limitations which I hope to fix:
 1. "en_US" is hardcoded into the add-on though isn't used. If speechd is configured to use another language, it should work, but specifying different languages in the field should have no effect e.g. `{{tts fr_FR:SomeField}}`
 2. Field TTS speed control is not yet supported e.g. `{{tts fr_FR speed=0.8:SomeField}}`
 3. config file - add variable so reading can be disabled while reviewing
