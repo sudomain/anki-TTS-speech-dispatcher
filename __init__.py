@@ -14,35 +14,58 @@ Heavily based on MacTTSPlayer(TTSProcessPlayer): https://github.com/ankitects/an
 #TODO remove unnecesary imports
 #TODO support per field TTS speed e.g. {{tts fr_FR speed=0.8:SomeField}}. spd-say --rate can take values between -100 and 100 so the decimal values Anki uses must be normalizaed to integers between -100 and 100 
 
+import re
 import subprocess
+
 from dataclasses import dataclass
 from typing import List, cast
 
-from anki.sound import AVTag, TTSTag
+from anki.sound import AVTag, TTSTag, OnDoneCallback, av_player
 from aqt import mw
-from aqt.sound import OnDoneCallback, av_player
-
-import aqt.tts
+from aqt.tts import TTSProcessPlayer, TTSVoice
 
 # we subclass the default voice object to store the speechd language code
 @dataclass
-class SpeechDVoice(aqt.tts.TTSVoice):
+class SpeechDVoice(TTSVoice):
     #TODO Getting the voice list from `spd-say --list-synthesis-voices` can take several seconds if many are installed, so do it at Anki startup
     speechd_lang: str
 
-#class SpeechDPlayer(TTSProcessPlayer):
-class SpeechDPlayer(aqt.tts.TTSProcessPlayer):
+
+class SpeechDPlayer(TTSProcessPlayer):
     # this is called the first time Anki tries to play a TTS file
-    def get_available_voices(self) -> List[aqt.tts.TTSVoice]:
-        voices = []
+    #def get_available_voices(self) -> list[TTSVoice]:
+    #    voices = []
 
         # add the voice using the name "speechd"
-        voices.append(SpeechDVoice(name="speechd", lang="en_US", speechd_lang="en"))
-        return voices  # type: ignore
+    #    voices.append(SpeechDVoice(name="speechd", lang="en_US", speechd_lang="en"))
+    #    return voices  # type: ignore
+
+    VOICE_HELP_LINE_RE = re.compile(r"^(.+)\s+(\S+)\s+#.*$")
+
+    def get_available_voices(self) -> list[TTSVoice]:
+        cmd = subprocess.run(
+            ["spd-say", "--list-synthesis-voices"], capture_output=True, check=True, encoding="utf8"
+        )
+        voices = []
+        for line in cmd.stdout.splitlines():
+            voice = self._parse_voice_line(line)
+            if voice:
+                voices.append(voice)
+        return voices
+
+    def _parse_voice_line(self, line: str) -> TTSVoice | None:
+        m = self.VOICE_HELP_LINE_RE.match(line)
+        if not m:
+            return None
+
+        original_name = m.group(1).strip()
+        tidy_name = f"speechd_{original_name.replace(' ', '_')}"
+        return SpeechDVoice(name=tidy_name, original_name=original_name, lang=m.group(2))
 
     # this is called on a background thread, and will not block the UI
+    #TODO pipe mode
     def _play(self, tag: AVTag) -> None:
-        #get the avtag
+        # get the avtag
         assert isinstance(tag, TTSTag)
         match = self.voice_for_tag(tag)
 
